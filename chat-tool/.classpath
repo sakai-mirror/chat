@@ -22,6 +22,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/presence-util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/util-api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/util-util"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/metaobj-api"/>
+	<classpathentry kind="var" path="MAVEN_REPO/jsf/jars/jsf-api-1.1.01.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
