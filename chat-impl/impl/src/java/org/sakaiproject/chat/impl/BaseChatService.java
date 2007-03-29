@@ -115,7 +115,7 @@ public abstract class BaseChatService extends BaseMessageService implements Chat
 	public void init()
 	{
 		super.init();
-
+/*
 		// register functions
 		FunctionManager.registerFunction(eventId(SECURE_READ));
 		FunctionManager.registerFunction(eventId(SECURE_ADD));
@@ -124,7 +124,9 @@ public abstract class BaseChatService extends BaseMessageService implements Chat
 
 		// entity producer registration
 		m_entityManager.registerEntityProducer(this, REFERENCE_ROOT);
-	}
+*/	
+   }
+   
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * StorageUser implementation

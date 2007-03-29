@@ -90,6 +90,19 @@
       <version>${sakai.version}</version>
       <scope>provided</scope>
     </dependency>
+    
+    <dependency>
+           <groupId>org.sakaiproject</groupId>
+           <artifactId>sakai-search-api</artifactId>
+           <version>${sakai.version}</version>
+       </dependency>
+
+		<dependency>
+           <groupId>org.sakaiproject</groupId>
+           <artifactId>sakai-search-impl</artifactId>
+           <version>${sakai.version}</version>
+       </dependency>
+       
     <dependency>
       
       <groupId>org.sakaiproject</groupId>
@@ -146,6 +159,7 @@
       <version>${sakai.version}</version>
       <scope>provided</scope>
     </dependency>
+    
     <dependency>
       
       <groupId>javax.servlet</groupId>
@@ -160,6 +174,19 @@
       <version>1.0.4</version>
       <scope>provided</scope>
     </dependency>
+    
+    <dependency>
+         <groupId>${sakai.hibernate.groupId}</groupId>
+         <artifactId>${sakai.hibernate.artifactId}</artifactId>
+         <version>${sakai.hibernate.version}</version>
+     </dependency>
+	  	 
+     <dependency>
+         <groupId>${sakai.spring.groupId}</groupId>
+         <artifactId>${sakai.spring.artifactId}</artifactId>
+         <version>${sakai.spring.version}</version>
+     </dependency>
+
   </dependencies>
   <build>
     
@@ -175,6 +202,12 @@
           <include>**/*.sql</include>
         </includes>
       </resource>
+      <resource>
+			<directory>${basedir}/src/bundle</directory>
+			<includes>
+				<include>**/*.properties</include>
+			</includes>
+		</resource>
     </resources>
     
   </build>

@@ -3,7 +3,89 @@
 
 <beans>
 
-	<bean id="org.sakaiproject.chat.api.ChatService"
+
+    <bean id="org.sakaiproject.chat2.model.ChatHibernateBean"
+        class="org.sakaiproject.springframework.orm.hibernate.impl.AdditionalHibernateMappingsImpl">
+        <property name="mappingResources">
+            <list>
+                <value>
+                    org/sakaiproject/chat2/model/impl/ChatImpl.hbm.xml
+                </value>
+            </list>
+        </property>
+    </bean>
+
+
+    <bean id="org.sakaiproject.chat2.model.ChatManager"
+        class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="org.sakaiproject.springframework.orm.hibernate.GlobalTransactionManager" />
+        </property>
+        <property name="target">
+            <bean
+                class="org.sakaiproject.chat2.model.impl.ChatManagerImpl"
+                singleton="true" init-method="init" destroy-method="destroy">
+                <property name="sessionFactory">
+                    <ref
+                        bean="org.sakaiproject.springframework.orm.hibernate.GlobalSessionFactory" />
+                </property>
+			       <property name="toolManager">
+			          <ref bean="org.sakaiproject.tool.api.ActiveToolManager"/>
+			       </property>
+			       <property name="entityManager">
+			         <ref bean="org.sakaiproject.entity.api.EntityManager"/>
+			      </property>
+            </bean>
+        </property>
+        <property name="transactionAttributes">
+            <props>
+                <prop key="*">PROPAGATION_REQUIRED</prop>
+            </props>
+        </property>
+    </bean>
+    
+    <bean id="org.sakaiproject.entity.api.EntityProducer.chat"
+      class="org.sakaiproject.chat2.model.impl.ChatEntityProducer"
+      init-method="init"
+		destroy-method="destroy"
+		singleton="true">
+      <property name="entityManager">
+         <ref bean="org.sakaiproject.entity.api.EntityManager"/>
+      </property>
+      <property name="chatManager"><ref bean="org.sakaiproject.chat2.model.ChatManager"/></property>
+   </bean>
+
+    <bean id="chatSearchAdapter"
+    	class="org.sakaiproject.chat2.model.impl.ChatContentProducer"
+    	singleton="true" init-method="init" destroy-method="destroy">
+    	<property name="addEvents">
+    		<list>
+    			<value>chat.new</value>
+    			<value>chat.revise.own</value>
+    			<value>chat.revise.any</value>
+    		</list>
+    	</property>
+    	<property name="removeEvents">
+    		<list>
+    			<value>chat.delete.own</value>
+    			<value>chat.delete.any</value>
+    		</list>
+    	</property>
+    	<property name="entityManager">
+         <ref bean="org.sakaiproject.entity.api.EntityManager"/>
+      </property>
+      <property name="chatManager">
+      	<ref bean="org.sakaiproject.chat2.model.ChatManager"/>
+      </property>
+      <property name="searchService">
+      	<ref bean="org.sakaiproject.search.api.SearchService" />
+      </property>
+      <property name="searchIndexBuilder">
+      	<ref bean="org.sakaiproject.search.api.SearchIndexBuilder" />
+      </property>
+    </bean>
+
+    <bean id="org.sakaiproject.chat.api.ChatService"
 			class="org.sakaiproject.chat.impl.DbChatService"
 			init-method="init"
 			destroy-method="destroy"
@@ -27,5 +109,6 @@
  		<property name="locksInDb"><value>false</value></property>
  		<property name="autoDdl"><value>${auto.ddl}</value></property>
 	</bean>
+	
 
 </beans>
