@@ -244,7 +244,7 @@ public class ChatDataMigration {
                   Object xml = rs.getObject("XML");
                   String owner = rs.getString("OWNER");
                   Date messageDate = rs.getTimestamp("MESSAGE_DATE");
-                 
+                  
                   printDebug("*******FOUND MESSAGE: " + oldMessageId);
                   printDebug("*******FOUND MESSAGE: " + xml);
                   
