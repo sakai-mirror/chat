@@ -4,17 +4,17 @@
  ***********************************************************************************
  *
  * Copyright (c) 2003, 2004, 2005, 2006 The Sakai Foundation.
- * 
- * Licensed under the Educational Community License, Version 1.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ *
+ * Licensed under the Educational Community License, Version 1.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.opensource.org/licenses/ecl1.php
- * 
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
- * See the License for the specific language governing permissions and 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  *
  **********************************************************************************/
@@ -24,9 +24,11 @@ package org.sakaiproject.chat.impl;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.sakaiproject.chat.api.ChatServiceSql;
 import org.sakaiproject.db.api.SqlReader;
 import org.sakaiproject.db.api.SqlService;
 import org.sakaiproject.message.api.Message;
@@ -39,6 +41,8 @@ import org.sakaiproject.util.StorageUser;
 import org.sakaiproject.util.Xml;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+
 
 /**
  * <p>
@@ -70,7 +74,7 @@ public class DbChatService extends BaseChatService
 
 	/**
 	 * Dependency: SqlService.
-	 * 
+	 *
 	 * @param service
 	 *        The SqlService.
 	 */
@@ -81,7 +85,7 @@ public class DbChatService extends BaseChatService
 
 	/**
 	 * Configuration: set the table name for the container.
-	 * 
+	 *
 	 * @param path
 	 *        The table name for the container.
 	 */
@@ -92,7 +96,7 @@ public class DbChatService extends BaseChatService
 
 	/**
 	 * Configuration: set the table name for the resource.
-	 * 
+	 *
 	 * @param path
 	 *        The table name for the resource.
 	 */
@@ -103,7 +107,7 @@ public class DbChatService extends BaseChatService
 
 	/**
 	 * Configuration: set the locks-in-db
-	 * 
+	 *
 	 * @param path
 	 *        The storage path.
 	 */
@@ -117,7 +121,7 @@ public class DbChatService extends BaseChatService
 
 	/**
 	 * Configuration: run the to-draft/owner conversion
-	 * 
+	 *
 	 * @param value
 	 *        The conversion desired value.
 	 */
@@ -131,7 +135,7 @@ public class DbChatService extends BaseChatService
 
 	/**
 	 * Configuration: to run the ddl on init or not.
-	 * 
+	 *
 	 * @param value
 	 *        the auto ddl value.
 	 */
@@ -139,6 +143,25 @@ public class DbChatService extends BaseChatService
 	{
 		m_autoDdl = new Boolean(value).booleanValue();
 	}
+
+   protected Map<String, ChatServiceSql> databaseBeans;       // contains a map of the database dependent beans injected by spring
+   protected ChatServiceSql              chatServiceSql;      // contains database dependent code
+
+   public void setDatabaseBeans(Map databaseBeans) {
+     this.databaseBeans = databaseBeans;
+   }
+
+   public ChatServiceSql getChatServiceSql() {
+      return chatServiceSql;
+   }
+
+   /**
+    * sets which bean containing database dependent code should be used depending on the database vendor.
+    */
+   public void setChatServiceSql(String vendor) {
+      this.chatServiceSql = (databaseBeans.containsKey(vendor) ? databaseBeans.get(vendor) : databaseBeans.get("default"));
+   }
+
 
 	/**********************************************************************************************************************************************************************************************************************************************************
 	 * Init and Destroy
@@ -158,6 +181,7 @@ public class DbChatService extends BaseChatService
 			}
 
 			super.init();
+         setChatServiceSql(m_sqlService.getVendor());
 
 			M_log.info("init(): tables: " + m_cTableName + " " + m_rTableName + " locks-in-db: " + m_locksInDb);
 
@@ -181,7 +205,7 @@ public class DbChatService extends BaseChatService
 
 	/**
 	 * Construct a Storage object.
-	 * 
+	 *
 	 * @return The new storage object.
 	 */
 	protected Storage newStorage()
@@ -198,7 +222,7 @@ public class DbChatService extends BaseChatService
 	{
 		/**
 		 * Construct.
-		 * 
+		 *
 		 * @param user
 		 *        The StorageUser class to call back for creation of Resource and Edit objects.
 		 */
@@ -320,7 +344,7 @@ public class DbChatService extends BaseChatService
 			connection.setAutoCommit(false);
 
 			// read all message records that need conversion
-			String sql = "select CHANNEL_ID, MESSAGE_ID, XML from " + m_rTableName /* + " where OWNER is null" */;
+         String sql = chatServiceSql.getListMessagesSql(m_rTableName);
 			m_sqlService.dbRead(connection, sql, null, new SqlReader()
 			{
 				private int count = 0;
@@ -351,8 +375,7 @@ public class DbChatService extends BaseChatService
 						boolean draft = m.getHeader().getDraft();
 
 						// update
-						String update = "update " + m_rTableName
-								+ " set OWNER = ?, DRAFT = ? where CHANNEL_ID = ? and MESSAGE_ID = ?";
+                  String update = chatServiceSql.getUpdateMessageSql(m_rTableName);
 						Object fields[] = new Object[4];
 						fields[0] = owner;
 						fields[1] = (draft ? "1" : "0");
