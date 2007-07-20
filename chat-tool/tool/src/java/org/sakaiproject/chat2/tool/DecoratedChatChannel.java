@@ -156,6 +156,8 @@ public class DecoratedChatChannel {
       this.newChannel = newChannel;
    }
    
-
+   public int getNumberChannelMessages() {
+      return chatTool.countChannelMessages(chatChannel);
+   }
    
 }
