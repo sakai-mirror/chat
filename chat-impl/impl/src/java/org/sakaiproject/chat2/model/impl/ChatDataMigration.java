@@ -210,7 +210,7 @@ public class ChatDataMigration {
                    * description, 
                    * filterType, 
                    * filterParam, 
-                   * contextDefaultChannel, 
+                   * placementDefaultChannel, 
                    * migratedChannelId,
                    * ENABLE_USER_OVERRIDE
                    */
