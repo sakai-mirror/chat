@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.context.ExternalContext;
@@ -183,6 +185,8 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    /** Allows us to see who is in the current room */
    private PresenceObserverHelper presenceChannelObserver = null;
    
+   private static Map toolsBySessionId = new HashMap();
+
    
    /**
     * This is called from the first page to redirect the user to the proper view.
@@ -256,6 +260,9 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    }
    
    protected boolean refreshPresence() {
+       System.out.println("refreshPresence " + this + " " +
+			  SessionManager.getCurrentSessionUserId());
+
       if (getCurrentChannel() == null) {
          ChatChannel defaultChannel = getChatManager().getDefaultChannel(
                getToolManager().getCurrentPlacement().getContext(),
@@ -264,10 +271,10 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       }
       if(getCurrentChannel() != null) {
          // place a presence observer on this tool.
-         presenceChannelObserver = new PresenceObserverHelper(this,
-               getCurrentChannel().getChatChannel().getId());
+	  //         presenceChannelObserver = new PresenceObserverHelper(this,
+	  //               getCurrentChannel().getChatChannel().getId());
          
-         getChatManager().addRoomListener(this, getCurrentChannel().getChatChannel().getId());
+	  //         getChatManager().addRoomListener(this, getCurrentChannel().getChatChannel().getId());
          return true;
          //presenceChannelObserver.updatePresence();
       }
@@ -295,7 +302,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    public void roomDeleted(String roomId)
    {
       if(currentChannel != null && currentChannel.getChatChannel().getId().equals(roomId)) {
-         resetCurrentChannel(currentChannel);
+	  resetCurrentChannel(currentChannel, true);
       }
    }
 
@@ -315,16 +322,35 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     * this tool isn't updating the presence any longer thus isn't in the location
     * thus doesn't need to observe the presence of the room.
     */
+   
+   // new impl that counts the number of system in the location
    public void userLeft(String location, String user)
    {
-      if(presenceChannelObserver != null && presenceChannelObserver.getPresentUsers().size() == 0) {
-         presenceChannelObserver.endObservation();
-         getChatManager().removeRoomListener(this, currentChannel.getChatChannel().getId());
-         presenceChannelObserver = null;
-      } else
+       //      if(presenceChannelObserver != null && presenceChannelObserver.getPresentSessionsCount() == 0) {
+       //         presenceChannelObserver.endObservation();
+       //         getChatManager().removeRoomListener(this, currentChannel.getChatChannel().getId());
+       //         presenceChannelObserver = null;
+       //      } else
+       if (currentChannel != null && 
+	   SessionManager.getSession(sessionId) == null) {
+	   System.out.println("user left expired session " + sessionId + " " + currentChannel);
+	   resetCurrentChannel(currentChannel, true);
+       }
+       else
          m_courierService.deliver(new DirectRefreshDelivery(sessionId+location, "Presence"));
    }
 
+
+   // old impl that looked at list of users present in the location.
+//   public void userLeft(String location, String user)
+//   {
+//      if(presenceChannelObserver != null && presenceChannelObserver.getPresentUsers().size() == 0) {
+//         presenceChannelObserver.endObservation();
+//         getChatManager().removeRoomListener(this, currentChannel.getChatChannel().getId());
+//         presenceChannelObserver = null;
+//      } else
+//         m_courierService.deliver(new DirectRefreshDelivery(sessionId+location, "Presence"));
+//   }
 
    
    //********************************************************************
@@ -813,35 +839,73 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     */
    public void setCurrentChannel(DecoratedChatChannel channel)
    {
-      if(presenceChannelObserver != null) {
-         presenceChannelObserver.endObservation();
-         presenceChannelObserver.removePresence();
-         getChatManager().removeRoomListener(this, channel.getChatChannel().getId());
-      }
-      presenceChannelObserver = null;
+
+      // if changing to the same channel, nothing to do
+      // this is a fairly expensive operation, so it's worth optimizing out
+
+      if (this.currentChannel != null && channel != null &
+	   this.currentChannel.getChatChannel().getId() ==
+	   channel.getChatChannel().getId())
+	   return;
+
+      if(presenceChannelObserver != null)
+	  resetCurrentChannel(this.currentChannel, true);
       
       this.currentChannel = channel;
-
+      
       if(channel != null) {
+
+	 String channelId = channel.getChatChannel().getId();
+
+	 ChatTool oldTool = null;
+
+	 synchronized(toolsBySessionId) {
+	     Map tools = (Map)toolsBySessionId.get(channelId);
+	     if (tools == null) {
+		 tools = new HashMap();
+		 toolsBySessionId.put(channelId, tools);
+	     } else
+		 oldTool = (ChatTool)tools.get(sessionId);
+	     tools.put(sessionId, this);
+	 }
+
+	 if (oldTool != null) {
+	     System.out.println("setcurrent removing " + channel);
+	     oldTool.resetCurrentChannel(channel, false);
+	 }
+	 
          // place a presence observer on this tool.
-         presenceChannelObserver = new PresenceObserverHelper(this,
-                  channel.getChatChannel().getId());
+         presenceChannelObserver = new PresenceObserverHelper(this, channelId);
          
-         getChatManager().addRoomListener(this, channel.getChatChannel().getId());
+	 System.out.println("addroom " + channelId + " " + sessionId + " " + this);
+         getChatManager().addRoomListener(this, channelId);
          
          presenceChannelObserver.updatePresence();
       }
    }
-   
-   protected void resetCurrentChannel(DecoratedChatChannel oldChannel) {
+
+    protected void resetCurrentChannel(DecoratedChatChannel oldChannel, Boolean removeFromHash) {
+      String channelId = oldChannel.getChatChannel().getId();
+
       if(presenceChannelObserver != null) {
          presenceChannelObserver.endObservation();
          presenceChannelObserver.removePresence();
-         getChatManager().removeRoomListener(this, oldChannel.getChatChannel().getId());
+         getChatManager().removeRoomListener(this, channelId);
       }
       presenceChannelObserver = null;
       
-      this.currentChannel = null;
+      if (removeFromHash) {
+	  System.out.println("reset current removing " + channelId);
+	  synchronized(toolsBySessionId) {
+	      Map tools = (Map)toolsBySessionId.get(channelId);
+	      if (tools != null) {
+		  tools.remove(sessionId);
+		  if (tools.size() == 0)
+		      toolsBySessionId.remove(tools);
+	      }
+	  }
+      }
+
    }
    
    /**
@@ -1390,5 +1454,8 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       this.toolContext = toolContext;
    }
    
+   public String getSessionId() {
+      return sessionId;
+   }
    
 }
