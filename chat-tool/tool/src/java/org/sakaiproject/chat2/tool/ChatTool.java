@@ -260,7 +260,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    }
    
    protected boolean refreshPresence() {
-       System.out.println("refreshPresence " + this + " " +
+       logger.debug("refreshPresence " + this + " " +
 			  SessionManager.getCurrentSessionUserId());
 
       if (getCurrentChannel() == null) {
@@ -333,7 +333,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
        //      } else
        if (currentChannel != null && 
 	   SessionManager.getSession(sessionId) == null) {
-	   System.out.println("user left expired session " + sessionId + " " + currentChannel);
+	   logger.debug("user left expired session " + sessionId + " " + currentChannel);
 	   resetCurrentChannel(currentChannel, true);
        }
        else
@@ -870,14 +870,14 @@ public class ChatTool implements RoomObserver, PresenceObserver {
 	 }
 
 	 if (oldTool != null) {
-	     System.out.println("setcurrent removing " + channel);
+	     logger.debug("setcurrent removing " + channel);
 	     oldTool.resetCurrentChannel(channel, false);
 	 }
 	 
          // place a presence observer on this tool.
          presenceChannelObserver = new PresenceObserverHelper(this, channelId);
          
-	 System.out.println("addroom " + channelId + " " + sessionId + " " + this);
+	 logger.debug("addroom " + channelId + " " + sessionId + " " + this);
          getChatManager().addRoomListener(this, channelId);
          
          presenceChannelObserver.updatePresence();
@@ -895,7 +895,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       presenceChannelObserver = null;
       
       if (removeFromHash) {
-	  System.out.println("reset current removing " + channelId);
+	  logger.debug("reset current removing " + channelId);
 	  synchronized(toolsBySessionId) {
 	      Map tools = (Map)toolsBySessionId.get(channelId);
 	      if (tools != null) {
