@@ -576,6 +576,11 @@ public class ChatManagerImpl extends HibernateDaoSupport implements ChatManager,
       synchronized(roomObservers) {
          roomObservers.add(observer);
       }
+      
+      if (logger.isDebugEnabled()) {
+          logger.debug("after add roomObservers " + roomObservers);
+       }
+
    }
    
    public void removeRoomListener(RoomObserver observer, String roomId)
@@ -597,15 +602,13 @@ public class ChatManagerImpl extends HibernateDaoSupport implements ChatManager,
                }
                
             }
-            
          } // end if(roomObservers != null)
+         
+         if (logger.isDebugEnabled()) {
+             logger.debug("after remove roomObservers " + roomObservers);
+          }
       }
    }
-   
-   
-   
-   
-
 
    /**
     * {@inheritDoc}
@@ -613,15 +616,9 @@ public class ChatManagerImpl extends HibernateDaoSupport implements ChatManager,
    public void sendMessage(ChatMessage message) {
       ChatMessageTxSync txSync = new ChatMessageTxSync(message);
 
-      if (TransactionSynchronizationManager.isSynchronizationActive()) {
-         TransactionSynchronizationManager.registerSynchronization(txSync);
-      }
-      else {
-         txSync.afterCompletion(ChatMessageTxSync.STATUS_COMMITTED);
-      }
+      getHibernateTemplate().flush();
+      txSync.afterCompletion(ChatMessageTxSync.STATUS_COMMITTED);
    }
-   
-   
    
    /**
     * {@inheritDoc}
@@ -784,15 +781,21 @@ public class ChatManagerImpl extends HibernateDaoSupport implements ChatManager,
             
             //String[] messageParams = event.getResource().split(":");
             
-            List observers = (List)roomListeners.get(ref.getContainer());
+            ArrayList observers = (ArrayList)roomListeners.get(ref.getContainer());
             
+	    // originally we did the iteration inside synchronized.
+	    // however that turns out to hold the lock too long
+	    // a shallow copy of an arraylist shouldn't be bad.
+	    // we currently call removeRoom from receivedMessage in
+	    // some cases, so it can't be locked or we will deadlock
             if(observers != null) {
                synchronized(observers) {
-                  for(Iterator i = observers.iterator(); i.hasNext(); ) {
-                     RoomObserver observer = (RoomObserver)i.next();
-                     
-                     observer.receivedMessage(ref.getContainer(), ref.getId());
-                  }
+		   observers = (ArrayList)observers.clone();
+	       }
+	       for(Iterator i = observers.iterator(); i.hasNext(); ) {
+		   RoomObserver observer = (RoomObserver)i.next();
+                   
+		   observer.receivedMessage(ref.getContainer(), ref.getId());
                }
             }
             
@@ -800,16 +803,17 @@ public class ChatManagerImpl extends HibernateDaoSupport implements ChatManager,
          } else if (event.getEvent().equals(ChatFunctions.CHAT_FUNCTION_DELETE_CHANNEL)) {
             //String chatChannelId = event.getResource();
             
-            List observers = (List)roomListeners.get(ref.getId());
+            ArrayList observers = (ArrayList)roomListeners.get(ref.getId());
             
             if(observers != null) {
                synchronized(observers) {
-                  for(Iterator i = observers.iterator(); i.hasNext(); ) {
-                     RoomObserver observer = (RoomObserver)i.next();
-                     
-                     observer.roomDeleted(ref.getId());
-                  }
-               }
+		   observers = (ArrayList)observers.clone();
+	       }
+	       for(Iterator i = observers.iterator(); i.hasNext(); ) {
+		   RoomObserver observer = (RoomObserver)i.next();
+                   
+		   observer.roomDeleted(ref.getId());
+	       }
             }
          }
       }

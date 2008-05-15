@@ -1,33 +1,19 @@
 <f:view>
    <sakai:view title="#{msgs['custom.chatroom']}">
-      <h:form>
-      
+      <h:form>     
          <sakai:tool_bar>
             <h:commandLink action="#{ChatTool.processActionSynopticOptions}" rendered="#{ChatTool.maintainer}">
                <h:outputText value="#{msgs.manage_tool}" />
             </h:commandLink>
-         </sakai:tool_bar>
-         
-         <sakai:messages />
-         
-         <t:dataList id="chatSynoptic" var="message"
-				value="#{ChatTool.synopticMessages}" layout="simple">
-		
-				<f:verbatim>
-				<h3 class="testPanelHeader">
-				</f:verbatim>
-					<h:outputText value="#{message.restrictedBody}" />
-				<f:verbatim>
-				</h3>
-				<p class="textPanelFooter">
-				</f:verbatim>
-					<h:outputText value="(#{message.chatMessage.chatChannel.title} - #{message.owner} - #{message.dateTime})" />
-				<f:verbatim>
-				</p>
-				</f:verbatim>
-
-			</t:dataList>
-			
+         </sakai:tool_bar>         
+         <sakai:messages />         
+		<ul id="_id1:chatSynoptic" class="synopticList">
+		<c:forEach items="${ChatTool.synopticMessages}" var="message">  		
+			<li>
+        	<t:htmlTag value="h3" styleClass="textPanelHeader"><c:out value="${message.restrictedBody}" /></t:htmlTag>
+        	<t:htmlTag value="span" styleClass="textPanelFooter" style="display:block"><c:out value="(${message.chatMessage.chatChannel.title} - ${message.owner} - ${message.dateTime})" /></t:htmlTag>
+			</li>
+		</c:forEach></ul>
 		</h:form>
 	</sakai:view>
 </f:view>
