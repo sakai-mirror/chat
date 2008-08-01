@@ -13,38 +13,46 @@ deleteMsg = "<h:outputText value="#{msgs['list.del']}" />";
 deleteUrl = "<h:outputText value="#{ChatTool.toolContext}/sakai.chat.deleteMessage.helper/deleteMessageConfirm?session.current_message=" />";
 </script>
 
+	<sakai:script contextBase="/library" path="/js/jquery.js" />
 	<sakai:script contextBase="/sakai-chat-tool" path="/js/chatscript.js"/>
-	<sakai:script contextBase="/library" path="/js/jquery-1.1.2.js" />
 	
 	<sakai:messages />
 	
-	<t:dataList id="chatList" styleClass="chatList" var="message"
-				value="#{ChatTool.roomMessages}" layout="unorderedList">
 
-				<h:outputText value="#{message.owner} "
-					style="color: #{message.color}" />
+	<c:set var="deleteUrl" value="${ChatTool.toolContext}/sakai.chat.deleteMessage.helper/deleteMessageConfirm?session.current_message=" />
 
-				<h:commandLink id="deleteMessage" title="#{msgs['list.del']}"
-					action="#{message.processActionDeleteMessage}"
-					rendered="#{message.canRemoveMessage}">
-					<h:graphicImage id="deleteIcon" alt="#{msgs['list.del']}"
-						value="#{ChatTool.serverUrl}/library/image/sakai/delete.gif" />
-				</h:commandLink>
+	<c:set var="serial" value="0" />
+	<ul id="topForm:chatList" class="chatList">
 
-				<h:outputText
-					rendered="#{ChatTool.displayDate and ChatTool.displayTime}"
-					value=" (#{message.dateTime}) " styleClass="chatDate" />
-				<h:outputText
-					rendered="#{ChatTool.displayDate and not ChatTool.displayTime}"
-					value=" (#{message.date}) " styleClass="chatDate" />
-				<h:outputText
-					rendered="#{not ChatTool.displayDate and ChatTool.displayTime}"
-					value=" (#{message.time}) " styleClass="chatDate" />
+        <c:forEach items="${ChatTool.roomMessages}" var="message">
+	  <li><c:out value="<span style=\"color: ${message.color}\">${message.owner}</span>" escapeXml="false" /> 
 
-				<h:outputText value="#{message.chatMessage.body}" />
+   	  <c:if test="${message.canRemoveMessage}">
+	     <c:out value="<a id=\"topForm:chatList:${serial}:deleteMessage\" href=\"#\" title=\"Delete this message\" onclick=\"location.href='${deleteUrl}${message.chatMessage.id}'\"><img id=\"topForm:chatList:${serial}:deleteIcon\" src=\"${ChatTool.serverUrl}/library/image/sakai/delete.gif\" alt=\"Delete this message\" /></a>" escapeXml="false" />
+  	  </c:if>
 
-			</t:dataList>
+  	  <c:if test="${ChatTool.displayId}">
+	    <c:out value="<span class=\"chatDate\">(${message.id})</span>" escapeXml="false" /> 
+	  </c:if>
 
+	  <c:if test="${ChatTool.displayDate && ChatTool.displayTime}">
+	    <c:out value="<span class=\"chatDate\">(${message.dateTime})</span>" escapeXml="false" /> 
+	  </c:if>
+
+	  <c:if test="${ChatTool.displayDate && !ChatTool.displayTime}">
+	    <c:out value="<span class=\"chatDate\">(${message.date})</span>" escapeXml="false" /> 
+	  </c:if>
+
+	  <c:if test="${!ChatTool.displayDate && ChatTool.displayTime}">
+	    <c:out value="<span class=\"chatDate\">(${message.time})</span>" escapeXml="false" /> 
+	  </c:if>
+
+	  <c:out value="${message.chatMessage.body}" escapeXml="false" />
+
+	  </li>
+          <c:set var="serial" value="${serial + 1}" />
+	</c:forEach>
+	</ul>
 
 			<script type="text/javascript" language="JavaScript">
 		var Colors = [ <c:forEach items="${ChatTool.colorMapper.colors}" var="color">"<c:out value="${color}" />", </c:forEach> ""];
@@ -60,6 +68,7 @@ deleteUrl = "<h:outputText value="#{ChatTool.toolContext}/sakai.chat.deleteMessa
 	
 		var display_date = <c:out value="${ChatTool.displayDate}" />;
 		var display_time = <c:out value="${ChatTool.displayTime}" />;
+		var display_id = <c:out value="${ChatTool.displayId}" />;
 		var sound_alert = <c:out value="${ChatTool.soundAlert}" />;
 		
 		var objDiv = document.getElementById("Monitor");
