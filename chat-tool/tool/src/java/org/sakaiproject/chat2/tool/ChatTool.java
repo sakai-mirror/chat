@@ -64,6 +64,7 @@ import org.sakaiproject.user.api.User;
 import org.sakaiproject.user.api.UserNotDefinedException;
 import org.sakaiproject.user.cover.UserDirectoryService;
 import org.sakaiproject.util.DirectRefreshDelivery;
+import org.sakaiproject.util.FormattedText;
 import org.sakaiproject.util.ResourceLoader;
 import org.sakaiproject.util.Validator;
 import org.sakaiproject.util.Web;
@@ -514,7 +515,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       try {
          ChatMessage message = getChatManager().createNewMessage(
                getCurrentChannel().getChatChannel(), SessionManager.getCurrentSessionUserId());
-         message.setBody( Web.cleanHtml(newMessageText) );
+         message.setBody(FormattedText.processFormattedText(newMessageText, new StringBuilder()));
          if (!newMessageText.equals("")) {
             newMessageText = "";
             getChatManager().updateMessage(message);
