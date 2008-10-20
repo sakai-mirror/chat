@@ -144,12 +144,13 @@ public class ChatDelivery extends BaseDelivery
 		else
 		{
 			String msgbody = Web.escapeJsQuoted(Web.escapeHtmlFormattedText(message.getBody()));
+			String userName = Web.escapeJsQuoted(sender.getDisplayName());
          
          Time messageTime = TimeService.newTime(message.getMessageDate().getTime());
 
          StringBuilder retvalBuf = new StringBuilder();
 			retvalBuf.append( "try { appendMessage('" );
-			retvalBuf.append( sender.getDisplayName() );
+			retvalBuf.append( userName );
 			retvalBuf.append( "', '" );
 			retvalBuf.append( sender.getId() );
 			retvalBuf.append( "', '" );
