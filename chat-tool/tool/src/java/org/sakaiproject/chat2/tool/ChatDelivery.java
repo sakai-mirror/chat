@@ -144,6 +144,7 @@ public class ChatDelivery extends BaseDelivery
 		else
 		{
 			String msgbody = Web.escapeJsQuoted(Web.escapeHtmlFormattedText(message.getBody()));
+			msgbody = msgbody.replace('\n',' ').replace('\r',' ');
 			String userName = Web.escapeJsQuoted(sender.getDisplayName());
          
          Time messageTime = TimeService.newTime(message.getMessageDate().getTime());
