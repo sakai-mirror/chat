@@ -31,6 +31,17 @@ function formSubmitOnEnterJSF(field, event)
 	return true;
 }
 	
+function formSubmit(field)
+{		
+		if(navigator.userAgent.indexOf("Safari")>0){ 
+		var actionInjection = document.getElementById("actionInjection");		 
+		actionInjection.name = field.name;        
+		field.form.submit();	
+		return false;
+		}
+		return false;	
+}
+	
 </script>
 <script type="text/javascript" language="JavaScript">
 try { parent.updateNow(); } catch (error) {}
@@ -47,10 +58,12 @@ try { parent.updateNow(); } catch (error) {}
       <sakai:button_bar>
           <sakai:button_bar_item id="submit"
               action="#{ChatTool.processActionSubmitMessage}"
+              onclick="formSubmit(this)"
               value="#{msgs['control.post']}"
               styleClass="active" />
           <sakai:button_bar_item id="reset"
               action="#{ChatTool.processActionResetMessage}"
+              onclick="formSubmit(this)"
               value="#{msgs['control.clear']}" />
       </sakai:button_bar>
    </h:form>
