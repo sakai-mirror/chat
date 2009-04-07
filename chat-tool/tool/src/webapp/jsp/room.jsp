@@ -1,6 +1,7 @@
 <f:view>
    <sakai:view title="#{msgs['custom.chatroom']}">
       <h:form id="topForm">
+      <h:inputHidden id="chatidhidden" value="#{ChatTool.currentChatChannelId}" />
       <script type="text/javascript">
 	//focus_path = [ "Control", "mainForm:message" ];
 
@@ -72,7 +73,7 @@
 					marginheight="0"
 					scrolling="no"
 					align="right"
-					src="roomUsers">
+					src="roomUsers?channel=<h:outputText value="#{ChatTool.currentChatChannelId}" />">
 				</iframe>
 			</div>
 			<iframe
