@@ -28,7 +28,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.faces.application.FacesMessage;
@@ -48,6 +47,7 @@ import org.sakaiproject.chat2.model.ChatManager;
 import org.sakaiproject.chat2.model.RoomObserver;
 import org.sakaiproject.chat2.model.ChatFunctions;
 import org.sakaiproject.chat2.model.PresenceObserver;
+import org.sakaiproject.chat2.tool.ColorMapper;
 import org.sakaiproject.component.cover.ServerConfigurationService;
 import org.sakaiproject.courier.api.CourierService;
 import org.sakaiproject.event.api.UsageSession;
@@ -153,6 +153,8 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    
    private static final String PERMISSION_ERROR = "perm_error";
    private static final String PRESENCE_PREPEND = "chat_room_";
+
+   private static final String CHAT_CONTEXT_PRESENCE_PREFIX = "chat_site_";
    
    private static final int MESSAGEOPTIONS_NULL = -99;
    private static final int MESSAGEOPTIONS_ALL_MESSAGES = -1;
@@ -165,7 +167,6 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    private static final int DATETIME_DISPLAY_DATE = 0x02;
    private static final int DATETIME_DISPLAY_DATETIME = 0x03;
    private static final int DATETIME_DISPLAY_ID   = 0x04;
-   
    
    private static final String PARAM_CHANNEL = "channel";
    private static final String PARAM_DAYS = "days";
@@ -185,7 +186,6 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    
    /** Constructor discovered injected CourierService. */
    protected CourierService m_courierService = null;
-   
    
    /* All the private variables */
    /** The current channel the user is in */
@@ -222,10 +222,6 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    
    private String toolContext = null;
    
-   /*  error conditions */
-   /** an error that could display on the select a chat room page */
-   private boolean selectedRoomNotAvailable = false;
-   
     /* room id maps */
    private Map<String,PresenceObserverHelper> presenceChannelObservers =
        new ConcurrentHashMap<String,PresenceObserverHelper>();
@@ -235,6 +231,25 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     /* address maps */
    private static Map<String,ChatTool> tools = 
        new ConcurrentHashMap<String,ChatTool>();
+   
+   protected void setupTool() {
+      // "inject" a CourierService
+      m_courierService = org.sakaiproject.courier.cover.CourierService.getInstance();
+      
+      Session session = SessionManager.getCurrentSession();
+      sessionId = session.getId();
+      
+      Placement placement = getToolManager().getCurrentPlacement();
+      placementId = placement.getId();
+      
+      // Really only calling this just to make sure a room gets created
+      getSiteChannels();
+      
+      ChatChannel defaultChannel = getChatManager().getDefaultChannel(placement.getContext(), placement.getId());
+      setCurrentChannel(new DecoratedChatChannel(this, defaultChannel));
+         
+      return;
+   }
    
    /**
     * This is called from the first page to redirect the user to the proper view.
@@ -248,35 +263,20 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     */
    public String getEnterTool() {
       
-      // "inject" a CourierService
-      m_courierService = org.sakaiproject.courier.cover.CourierService.getInstance();
-      
-      Session session = SessionManager.getCurrentSession();
-      
-      sessionId = session.getId();
-      String url = PAGE_ENTER_ROOM;
-      
-      Placement placement = getToolManager().getCurrentPlacement();
-      placementId = placement.getId();
-      
-      //Really onl calling this just to make sure a room gets created
-      List rooms = getSiteChannels();
-      
-      ChatChannel defaultChannel = getChatManager().getDefaultChannel(placement.getContext(), placement.getId());
-      setCurrentChannel(new DecoratedChatChannel(this, defaultChannel));
-         
+	  setupTool();
+	   
       // if there is no room selected to enter then go to select a room
+      String url = PAGE_ENTER_ROOM;
+
       if(currentChannel == null)
          url = PAGE_LIST_ROOMS;
-         
-      
+               
       ExternalContext context = FacesContext.getCurrentInstance().getExternalContext();
       
       HttpServletRequest req = (HttpServletRequest) context.getRequest();
       req.setAttribute(Tool.NATIVE_URL, null); //signal to WrappedRequest that we want the Sakai managed
       setToolContext(req.getContextPath());
       req.setAttribute(Tool.NATIVE_URL, Tool.NATIVE_URL);
-      
       
       try {
            context.redirect(url);
@@ -318,11 +318,11 @@ public class ChatTool implements RoomObserver, PresenceObserver {
 
        observer.updatePresence();
       
-       // put into context a list of sessions with chat presence
-       String location = observer.getLocation();
-
        // get the current presence list (User objects) for this page
        List<User> users = observer.getPresentUsers();
+
+       if (users == null)
+          return userList;   
 
        //System.out.println("userincurrent channel: " + getCurrentChatChannelId() + " users " + users);
 
@@ -367,15 +367,6 @@ public class ChatTool implements RoomObserver, PresenceObserver {
        return userList;
    }
    
-   protected boolean refreshPresence() {
-
-	  if(getCurrentChannel() != null) {
-         return true;
-      }
-      return false;
-   }
-   
-
    //********************************************************************
    // Interface Implementations
 
@@ -419,7 +410,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     */
    public void userJoined(String location, String user)
    {
-      m_courierService.deliver(new DirectRefreshDelivery(sessionId+location, "Presence"));
+      m_courierService.deliver(new DirectRefreshDelivery(sessionId+location, IFRAME_ROOM_USERS));
    }
 
    /**
@@ -445,7 +436,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
 		   m_courierService.clear(sessionId+location);
        }
        else
-    	   m_courierService.deliver(new DirectRefreshDelivery(sessionId+location, "Presence"));
+    	   m_courierService.deliver(new DirectRefreshDelivery(sessionId+location, IFRAME_ROOM_USERS));
    }
    
    //********************************************************************
@@ -456,7 +447,6 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     */
    private void clearToolVars()
    {
-      selectedRoomNotAvailable = false;
    }
    
    /**
@@ -882,7 +872,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     * @return String
     */
    public String getCourierString() {
-      return "/courier/" + getCurrentChatChannelId();
+      return "/courier/" + getCurrentChatChannelId() + "/" + CHAT_CONTEXT_PRESENCE_PREFIX + getContext();
    }
 
    /**
@@ -921,7 +911,12 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     */
    public DecoratedChatChannel getCurrentChannel()
    {
-      return currentChannel;
+	   if (currentChannel == null) {
+		   // reset to the default channel
+		   setupTool();
+	   }
+	   
+	   return currentChannel;
    }
    
    /**
@@ -1071,12 +1066,11 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     * This creates select items out of the channels available to the tool
     * @return List of SelectItem
     */
-   public List getChatRoomsSelectItems()
+   public List<SelectItem> getChatRoomsSelectItems()
    {
       List<SelectItem> items = new ArrayList<SelectItem>();
       
-      for(Iterator i = getSiteChannels().iterator(); i.hasNext(); ) {
-         ChatChannel channel = (ChatChannel)i.next();
+      for (ChatChannel channel : getSiteChannels()) {
          items.add(createSelect(channel.getId(), channel.getTitle()));
       }
       
@@ -1088,12 +1082,11 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     * gets the tool decorated channels 
     * @return
     */
-   public List getChatChannels()
+   public List<DecoratedChatChannel> getChatChannels()
    {
       List<DecoratedChatChannel> items = new ArrayList<DecoratedChatChannel>();
       
-      for(Iterator i = getSiteChannels().iterator(); i.hasNext(); ) {
-         ChatChannel channel = (ChatChannel)i.next();
+      for (ChatChannel channel : getSiteChannels()) {
          items.add(new DecoratedChatChannel(this, channel));
       }
       
@@ -1224,7 +1217,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
          (getCanRenderMessageOptions() && messageOptions == MESSAGEOPTIONS_NO_MESSAGES);
    }
    
-   public List getMessageOptionsList() {
+   public List<SelectItem> getMessageOptionsList() {
 	   List<SelectItem> messageOptions = new ArrayList<SelectItem>();
 	   int numberParam = getCurrentChannel().getChatChannel().getNumberParam();
 	   int timeParam = getCurrentChannel().getChatChannel().getTimeParam();
@@ -1267,7 +1260,6 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    
    protected String getCustomOptionValue(String filterType) {
       int val = MESSAGEOPTIONS_MESSAGES_BY_DATE;
-      //String filterType = getCurrentChannel().getChatChannel().getFilterType(); 
       if (filterType.equals(ChatChannel.FILTER_BY_TIME)) {
          val = MESSAGEOPTIONS_MESSAGES_BY_DATE;
       }
@@ -1277,16 +1269,12 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       else if (filterType.equals(ChatChannel.FILTER_NONE)) {
          val = MESSAGEOPTIONS_NO_MESSAGES;
       }
-      //val = getCurrentChannel().getChatChannel().getFilterParam();
       return Integer.toString(val);
    }
    
    protected String getCustomOptionText(String filterType, int filterParam) {
-      //int x = 3;
       String result = getPastXDaysText(filterParam);
       
-      //x= getCurrentChannel().getChatChannel().getFilterParam();
-      //String filterType = getCurrentChannel().getChatChannel().getFilterType(); 
       if (filterType.equals(ChatChannel.FILTER_BY_TIME)) {
          result = getPastXDaysText(filterParam);
       }
@@ -1308,7 +1296,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       return getChatManager().countChannelMessages(channel);
    }
    
-   public List getRoomMessages()
+   public List<DecoratedChatMessage> getRoomMessages()
    {
       Date xDaysOld = null;
       int maxMessages = 0;
@@ -1331,7 +1319,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       return getMessages(getContext(), xDaysOld, maxMessages, true);
    }
    
-   public List getSynopticMessages()
+   public List<DecoratedChatMessage> getSynopticMessages()
    {
       DecoratedSynopticOptions dso = lookupSynopticOptions();
       if(getChatManager() == null){
@@ -1350,9 +1338,9 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     * @param sortAsc
     * @return
     */
-   protected List getMessages(String context, Date limitDate, int numMessages, boolean sortAsc)
+   protected List<DecoratedChatMessage> getMessages(String context, Date limitDate, int numMessages, boolean sortAsc)
    {
-      List messages = new ArrayList();
+      List<ChatMessage> messages = new ArrayList<ChatMessage>();
       try {
          ChatChannel channel = (currentChannel==null) ? null : currentChannel.getChatChannel();
          messages = getChatManager().getChannelMessages(channel, context, limitDate, numMessages, sortAsc);
@@ -1363,11 +1351,8 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       
       List<DecoratedChatMessage> decoratedMessages = new ArrayList<DecoratedChatMessage>();
       
-      for(Iterator i = messages.iterator(); i.hasNext(); ) {
-         ChatMessage message = (ChatMessage)i.next();
-         
+      for (ChatMessage message : messages) {         
          DecoratedChatMessage decoratedMessage = new DecoratedChatMessage(this, message);
-         
          decoratedMessages.add(decoratedMessage);
       }
       return decoratedMessages;
@@ -1385,7 +1370,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
 
    public boolean getCanRemoveChannelMessages(ChatChannel channel)
    {
-      return getChatManager().getCanDeleteAnyMessage();
+      return getChatManager().getCanDeleteAnyMessage(channel.getContext());
    }
    
    public boolean getCanEditChannel(ChatChannel channel)
@@ -1395,7 +1380,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    
    public boolean getCanCreateChannel()
    {
-      return getChatManager().getCanCreateChannel();
+      return getChatManager().getCanCreateChannel(getContext());
    }
 
    public boolean getCanRead(ChatChannel channel)
@@ -1403,9 +1388,14 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       return getChatManager().getCanReadMessage(channel);
    }
    
+   public boolean getCanPost()
+   {
+      return (getCurrentChannel() == null) ? false : getChatManager().getCanPostMessage(getCurrentChannel().getChatChannel());
+   }
+   
    public boolean getMaintainer()
    {
-      return (getChatManager() == null) ? false : getChatManager().isMaintainer();
+      return (getChatManager() == null) ? false : getChatManager().isMaintainer(getContext());
    }
    
    public String getMessageOwnerDisplayName(ChatMessage message)
@@ -1493,7 +1483,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
     * gets the channels in this site
     * @return List of ChatChannel
     */
-   protected List getSiteChannels() {
+   protected List<ChatChannel> getSiteChannels() {
       return getChatManager().getContextChannels(getContext(), getMessageFromBundle("default_new_channel_title"), getToolManager().getCurrentPlacement().getId());
    }
    
@@ -1521,23 +1511,11 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    public String getMessageFromBundle(String key, Object[] args) {
       return MessageFormat.format(getMessageFromBundle(key), args);
    }
-/*
-   public FacesMessage getFacesMessageFromBundle(String key, Object[] args) {
-      return new FacesMessage(getMessageFromBundle(key, args));
-   }*/
 
    public String getMessageFromBundle(String key) {
       if (toolBundle == null) {
          String bundle = FacesContext.getCurrentInstance().getApplication().getMessageBundle();
          toolBundle = new ResourceLoader(bundle);
-      /*   Locale requestLocale = FacesContext.getCurrentInstance().getExternalContext().getRequestLocale();
-         if (requestLocale != null) {
-            toolBundle = ResourceBundle.getBundle(
-                  bundle, requestLocale);
-         }
-         else {
-            toolBundle = ResourceBundle.getBundle(bundle);
-         }*/
       }
       return toolBundle.getString(key);
    }
