@@ -81,11 +81,74 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 
 }
 
-//fix for double click stack traces in IE
-doubleclick_disabler = function(){
-	this.form.submit();
-	this.onclick="return false;";
-}
-$(document).ready(function(){
-   $("input[@type=button], input[@type=submit]").bind("click", doubleclick_disabler);
-});
+//Library to ajaxify the Chatroom message submit action
+	$(document).ready(function() {
+	    var options = {
+	        //RESTful submit URL
+	        url_submit: '/direct/chat-message/new',
+	        control_key: 13,
+	        dom_button_submit: $(document.getElementById("controlPanel:submit")),
+	        dom_button_reset: $(document.getElementById("controlPanel:reset")),
+	        dom_textarea: $(document.getElementById("controlPanel:message")),
+	        channelId: document.getElementById("topForm:chatidhidden").value
+	    }
+	    //Bind button submit action
+	    options.dom_button_submit.bind('click', function() {
+	        var params = [{
+	            name:"chatChannelId", value:options.channelId
+	            },{
+	            name:"body", value:options.dom_textarea.val()
+	        }];
+	        if(options.channelId == null || options.channelId == "" ||
+                options.dom_textarea.val() == null || options.dom_textarea.val() == ""){
+                 options.dom_textarea.focus();
+                 return false;
+             }
+             if(options.dom_textarea.val().replace(/\n/g, "").replace(/ /g, "").length == 0){
+                     options.dom_textarea
+                        .val("")
+                        .focus();
+                   return false;
+            }
+            $.ajax({
+	            url: options.url_submit,
+	            data: params,
+	            type: "POST",
+	            beforeSend: function() {
+	                 $("#errorSubmit").slideUp('fast');
+	                 this.disabled = true;
+	            },
+	            error: function(xhr, ajaxOptions, thrownError) {
+	                $("#errorSubmit").slideDown('fast');
+	                $("#errorResponse").text(xhr.statusText);
+	                options.dom_textarea.focus();
+	                this.disabled = false;
+	                return false;
+	            },
+	            success: function(data) {
+	                //Run dom update from headscripts.js
+	               try { updateNow(); } catch (error) {alert(error);}
+	                options.dom_textarea
+	                    .val("")
+	                    .focus();
+	                this.disabled = false;
+	                return false;
+	            }
+	        });
+	        return false;
+	    });
+	    //Bind textarea keypress to submit btn
+	    options.dom_textarea.keydown(function(e){
+	        var key = e.charCode || e.keyCode || 0;
+	        if( options.control_key == key ){
+	           options.dom_button_submit.trigger('click');
+	           return false;
+	        }
+	    });
+	    options.dom_button_reset.bind('click', function(){
+	        options.dom_textarea
+	                .val("")
+	                .focus();
+	        return false;
+	    });
+	});
