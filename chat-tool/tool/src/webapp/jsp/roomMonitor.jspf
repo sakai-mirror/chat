@@ -9,6 +9,7 @@ deleteUrl = "<h:outputText value="#{ChatTool.toolContext}/sakai.chat.deleteMessa
 </script>
 
 	<sakai:messages />
+	
 
 	<c:set var="deleteUrl" value="${ChatTool.toolContext}/sakai.chat.deleteMessage.helper/deleteMessageConfirm?session.current_message=" />
 
@@ -19,7 +20,7 @@ deleteUrl = "<h:outputText value="#{ChatTool.toolContext}/sakai.chat.deleteMessa
 	  <li><c:out value="<span style=\"color: ${message.color}\">" escapeXml="false"/><c:out value="${message.owner}"/><c:out value="</span>" escapeXml="false" /> 
 
    	  <c:if test="${message.canRemoveMessage}">
-	     <c:out value="<a id=\"topForm:chatList:${serial}:deleteMessage\" href=\"#\" title=\"Delete this message\" onclick=\"location.href='${deleteUrl}${message.chatMessage.id}'\"><img id=\"topForm:chatList:${serial}:deleteIcon\" src=\"${ChatTool.serverUrl}/library/image/sakai/delete.gif\" alt=\"Delete this message\" /></a>" escapeXml="false" />
+	     <c:out value="<a id=\"topForm:chatList:${serial}:deleteMessage\" href=\"#\" title=\"Delete this message\" onclick=\"location.href='${deleteUrl}${message.chatMessage.id}'\"><img id=\"topForm:chatList:${serial}:deleteIcon\" style=\"height:12.5px\" src=\"${ChatTool.serverUrl}/library/image/sakai/delete.gif\" alt=\"Delete this message\" /></a>" escapeXml="false" />
   	  </c:if>
 
   	  <c:if test="${ChatTool.displayId}">
