@@ -12,19 +12,9 @@
 </script>
 <!--[if gte IE 6]>
 <style type="text/css">
-  .chatList{
-  width:'93%';
-}
+  .chatList{  width:'93%';}
 </style>
 <![endif]-->
-<style type="text/css">
-    .loadingImage {
-        background:transparent url(/library/image/sakai/spinner.gif) no-repeat scroll left center;
-        padding-left:2em;
-        color: green;
-        display:none;
-    }
-</style>
 <h:form id="topForm">
       <h:inputHidden id="chatidhidden" value="#{ChatTool.currentChatChannelId}" />
 
@@ -106,7 +96,6 @@
                     <strong id="errorResponse">Internal server error.</strong>
                 </div>
 				<h:inputTextarea id="message" value="#{ChatTool.newMessageText}" rows="3" cols="60" />
-               <h:outputText value="#{msgs['saving_new_chat']}" class="loadingImage" style="clear: both; display: block;" />
                <sakai:button_bar>
 		          <sakai:button_bar_item id="submit"
 		              value="#{msgs['control.post']}"

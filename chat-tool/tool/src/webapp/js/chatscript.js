@@ -122,12 +122,10 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 	            type: "POST",
 	            beforeSend: function() {
 	                 $("#errorSubmit").slideUp('fast');
-                    $(".loadingImage").slideDown('fast');
-	            },
+                },
 	            error: function(xhr, ajaxOptions, thrownError) {
 	                $("#errorSubmit").slideDown('fast');
-                    $(".loadingImage").slideUp('fast');
-	                $("#errorResponse").text(xhr.statusText);
+                    $("#errorResponse").text(xhr.statusText);
 	                options.dom_textarea.focus();
 	                options.dom_button_submit_raw.disabled = false;
 	                return false;
@@ -135,8 +133,7 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 	            success: function(data) {
 	                //Run dom update from headscripts.js
 	               try { updateNow(); } catch (error) {alert(error);}
-                    $(".loadingImage").slideUp('fast');
-	                options.dom_textarea
+                    options.dom_textarea
 	                    .val("")
 	                    .focus();
 	                options.dom_button_submit_raw.disabled = false;
