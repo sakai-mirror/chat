@@ -17,6 +17,14 @@
 }
 </style>
 <![endif]-->
+<style type="text/css">
+    .loadingImage {
+        background:transparent url(/library/image/sakai/spinner.gif) no-repeat scroll left center;
+        padding-left:2em;
+        color: green;
+        display:none;
+    }
+</style>
 <h:form id="topForm">
       <h:inputHidden id="chatidhidden" value="#{ChatTool.currentChatChannelId}" />
 
@@ -85,20 +93,21 @@
 					marginwidth="0"
 					marginheight="0"
 					scrolling="no"
-					align="right"
+					align="right"          
 					class="wcwmenu"
 					src="roomUsers?channel=<h:outputText value="#{ChatTool.currentChatChannelId}" />">
 				</iframe>
 			</div>
 		</h:form>
 		<h:form id="controlPanel" rendered="#{ChatTool.canPost}">
-			    <h:outputLabel for="message" value="#{msgs['control.lab']}" style="clear:both;display:block;" />
+		           <h:outputLabel for="message" value="#{msgs['control.lab']}" style="clear: both; display: block;" />
                 <div id="errorSubmit" class="alertMessage" style="display:none">
                     <h:outputText value="#{msgs['therewaspro']}" />
                     <strong id="errorResponse">Internal server error.</strong>
                 </div>
 				<h:inputTextarea id="message" value="#{ChatTool.newMessageText}" rows="3" cols="60" />
-				<sakai:button_bar>
+               <h:outputText value="#{msgs['saving_new_chat']}" class="loadingImage" style="clear: both; display: block;" />
+               <sakai:button_bar>
 		          <sakai:button_bar_item id="submit"
 		              value="#{msgs['control.post']}"
 		              styleClass="active" />

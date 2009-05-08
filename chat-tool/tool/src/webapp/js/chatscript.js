@@ -19,13 +19,13 @@
  *
  **********************************************************************************/
 
-// add a message to the chat list from chef_chat-List.vm 
+// add a message to the chat list from chef_chat-List.vm
 function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 {
 	var undefined;
-	var position = 100000, docheight = 0, frameheight = 300;	  
+	var position = 100000, docheight = 0, frameheight = 300;
 	var transcript = document.getElementById("topForm:chatList");
-	
+
 	// compose the time/date according to user preferences for this session
 	var msgTime = "";
 	if(window.display_date && window.display_time)
@@ -44,7 +44,7 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 	{
 		msgTime = " (" + pid + ") " ;
 	}
-	
+
 
 	var newDiv = document.createElement('li');
 	var color = ColorMap[uid];
@@ -57,14 +57,14 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 			nextColor = 0;
 		}
 	}
-	
+
 	var deleteHtml = "";
 	if (removeable == "true")
 	{
 		newComponentId = $(transcript).children("li").size();
 		var builtId = "topForm:chatList:" + newComponentId + ":deleteMessage";
 		var tmpdeleteUrl = deleteUrl + msgId;
-		deleteHtml = 
+		deleteHtml =
 			" <a id=\"" + builtId + "\" href=\"#\" onclick=\"location.href='" + tmpdeleteUrl + "'\" title=\"" + deleteMsg + "\" >" +
 			"<img src=\"/library/image/sakai/delete.gif\" border=\"0\" alt=\"" + deleteMsg + "\" /></a>";
 	}
@@ -79,7 +79,7 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 	var objDiv = document.getElementById("Monitor");
    objDiv.scrollTop = objDiv.scrollHeight;
 
-}
+}                           
 
 //Library to ajaxify the Chatroom message submit action
 	$(document).ready(function() {
@@ -87,14 +87,18 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 	        //RESTful submit URL
 	        url_submit: '/direct/chat-message/new',
 	        control_key: 13,
-	        dom_button_submit: $(document.getElementById("controlPanel:submit")),
+            dom_button_submit_raw: document.getElementById("controlPanel:submit"),
+            dom_button_submit: $(document.getElementById("controlPanel:submit")),
 	        dom_button_reset: $(document.getElementById("controlPanel:reset")),
 	        dom_textarea: $(document.getElementById("controlPanel:message")),
-	        channelId: document.getElementById("topForm:chatidhidden").value
-	    }
+	        channelId: document.getElementById("topForm:chatidhidden").value,
+	        enterKeyCheck:''
+	    };
+        
 	    //Bind button submit action
 	    options.dom_button_submit.bind('click', function() {
-	        var params = [{
+	    	options.dom_button_submit_raw.disabled = true;
+	    	var params = [{
 	            name:"chatChannelId", value:options.channelId
 	            },{
 	            name:"body", value:options.dom_textarea.val()
@@ -102,12 +106,14 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 	        if(options.channelId == null || options.channelId == "" ||
                 options.dom_textarea.val() == null || options.dom_textarea.val() == ""){
                  options.dom_textarea.focus();
+                 options.dom_button_submit_raw.disabled = false;
                  return false;
              }
              if(options.dom_textarea.val().replace(/\n/g, "").replace(/ /g, "").length == 0){
                      options.dom_textarea
                         .val("")
                         .focus();
+                     options.dom_button_submit_raw.disabled = false;
                    return false;
             }
             $.ajax({
@@ -116,33 +122,39 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 	            type: "POST",
 	            beforeSend: function() {
 	                 $("#errorSubmit").slideUp('fast');
-	                 this.disabled = true;
+                    $(".loadingImage").slideDown('fast');
 	            },
 	            error: function(xhr, ajaxOptions, thrownError) {
 	                $("#errorSubmit").slideDown('fast');
+                    $(".loadingImage").slideUp('fast');
 	                $("#errorResponse").text(xhr.statusText);
 	                options.dom_textarea.focus();
-	                this.disabled = false;
+	                options.dom_button_submit_raw.disabled = false;
 	                return false;
 	            },
 	            success: function(data) {
 	                //Run dom update from headscripts.js
 	               try { updateNow(); } catch (error) {alert(error);}
+                    $(".loadingImage").slideUp('fast');
 	                options.dom_textarea
 	                    .val("")
 	                    .focus();
-	                this.disabled = false;
+	                options.dom_button_submit_raw.disabled = false;
 	                return false;
 	            }
 	        });
+            return false;
+	    });
+        //Avoid sumitting on mouse click in textarea
+        options.dom_textarea.bind('click', function(){
 	        return false;
 	    });
 	    //Bind textarea keypress to submit btn
 	    options.dom_textarea.keydown(function(e){
 	        var key = e.charCode || e.keyCode || 0;
-	        if( options.control_key == key ){
-	           options.dom_button_submit.trigger('click');
-	           return false;
+	        if( options.control_key == key && !options.dom_button_submit_raw.disabled ){
+              options.dom_button_submit.trigger('click');
+	          return false;
 	        }
 	    });
 	    options.dom_button_reset.bind('click', function(){
