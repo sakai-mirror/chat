@@ -66,7 +66,7 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 		var tmpdeleteUrl = deleteUrl + msgId;
 		deleteHtml =
 			" <a id=\"" + builtId + "\" href=\"#\" onclick=\"location.href='" + tmpdeleteUrl + "'\" title=\"" + deleteMsg + "\" >" +
-			"<img src=\"/library/image/sakai/delete.gif\" border=\"0\" alt=\"" + deleteMsg + "\" /></a>";
+			"<img src=\"/library/image/sakai/delete.gif\" style=\"margin-bottom:-2px;\" border=\"0\" alt=\"" + deleteMsg + "\" /></a>";
 	}
 
 	newDiv.innerHTML = '<span style="color: ' + color + '">' + uname + '</span>'
@@ -83,6 +83,10 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 
 //Library to ajaxify the Chatroom message submit action
 	$(document).ready(function() {
+        //resize horizontal chat area to get rid os horizontal scroller in IE
+        if($.browser.msie){
+           $(".chatList").width('93%');
+        }
 	    var options = {
 	        //RESTful submit URL
 	        url_submit: '/direct/chat-message/new',
