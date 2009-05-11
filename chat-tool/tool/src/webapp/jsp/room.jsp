@@ -84,21 +84,23 @@
 				</iframe>
 			</div>
 		</h:form>
-		<h:form id="controlPanel" rendered="#{ChatTool.canPost}">
+		<f:subview id="controlPanel" rendered="#{ChatTool.canPost}">
+		<div>
 			    <h:outputLabel for="message" value="#{msgs['control.lab']}" style="clear:both;display:block;" />
                 <div id="errorSubmit" class="alertMessage" style="display:none">
                     <h:outputText value="#{msgs['therewaspro']}" />
                     <strong id="errorResponse">Internal server error.</strong>
                 </div>
 				<h:inputTextarea id="message" value="#{ChatTool.newMessageText}" rows="3" cols="60" />
-				<sakai:button_bar>
-		          <sakai:button_bar_item id="submit"
+				<p class="act">
+		          <h:commandButton type="button" id="submit"
 		              value="#{msgs['control.post']}"
 		              styleClass="active" />
-		          <sakai:button_bar_item id="reset"
+		          <h:commandButton type="button" id="reset"
 		              value="#{msgs['control.clear']}" />
-		     	</sakai:button_bar>
-			</h:form>
+		     	</p>
+		     	</div>
+			</f:subview>
 			<p style="clear:both;display:block;"></p>
 			
 	<script type="text/javascript" language="JavaScript">
