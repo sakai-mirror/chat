@@ -1,9 +1,9 @@
 /**********************************************************************************
- * $URL: https://source.sakaiproject.org/svn/presence/trunk/presence-util/util/src/java/org/sakaiproject/util/PresenceObservingCourier.java $
- * $Id: PresenceObservingCourier.java 8204 2006-04-24 19:35:57Z ggolden@umich.edu $
+ * $URL: $
+ * $Id: $
  ***********************************************************************************
  *
- * Copyright (c) 2003, 2004, 2005, 2006 The Sakai Foundation
+ * Copyright (c) 2003, 2004, 2005, 2006, 2007, 2008, 2009 The Sakai Foundation
  *
  * Licensed under the Educational Community License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 
 //Library to ajaxify the Chatroom message submit action
 	$(document).ready(function() {
-        //resize horizontal chat area to get rid os horizontal scroller in IE
+        //resize horizontal chat area to get rid of horizontal scrollbar in IE
         if($.browser.msie){
            $(".chatList").width('93%');
         }
@@ -129,7 +129,6 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
                 },
 	            error: function(xhr, ajaxOptions, thrownError) {
 	                $("#errorSubmit").slideDown('fast');
-                    $("#errorResponse").text(xhr.statusText);
 	                options.dom_textarea.focus();
 	                options.dom_button_submit_raw.disabled = false;
 	                return false;
@@ -146,7 +145,7 @@ function appendMessage(uname, uid, removeable, pdate, ptime, pid, msg, msgId)
 	        });
             return false;
 	    });
-        //Avoid sumitting on mouse click in textarea
+        //Avoid submitting on mouse click in textarea
         options.dom_textarea.bind('click', function(){
 	        return false;
 	    });

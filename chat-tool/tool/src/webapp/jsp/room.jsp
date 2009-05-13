@@ -89,7 +89,6 @@
 			    <h:outputLabel for="message" value="#{msgs['control.lab']}" style="clear:both;display:block;" />
                 <div id="errorSubmit" class="alertMessage" style="display:none">
                     <h:outputText value="#{msgs['therewaspro']}" />
-                    <strong id="errorResponse">Internal server error.</strong>
                 </div>
 				<h:inputTextarea id="message" value="#{ChatTool.newMessageText}" rows="3" cols="60" />
 				<p class="act">
