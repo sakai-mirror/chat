@@ -48,6 +48,7 @@ import org.sakaiproject.chat2.model.ChatManager;
 import org.sakaiproject.chat2.model.RoomObserver;
 import org.sakaiproject.chat2.model.ChatFunctions;
 import org.sakaiproject.chat2.model.PresenceObserver;
+import org.sakaiproject.chat2.tool.ColorMapper;
 import org.sakaiproject.component.cover.ServerConfigurationService;
 import org.sakaiproject.courier.api.CourierService;
 import org.sakaiproject.event.api.UsageSession;
@@ -325,6 +326,9 @@ public class ChatTool implements RoomObserver, PresenceObserver {
 
        // get the current presence list (User objects) for this page
        List<User> users = observer.getPresentUsers();
+
+       if (users == null)
+          return userList;   
 
        //System.out.println("userincurrent channel: " + getCurrentChatChannelId() + " users " + users);
 
@@ -1347,7 +1351,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
 
    public boolean getCanRemoveChannelMessages(ChatChannel channel)
    {
-      return getChatManager().getCanDeleteAnyMessage();
+      return getChatManager().getCanDeleteAnyMessage(channel.getContext());
    }
    
    public boolean getCanEditChannel(ChatChannel channel)
@@ -1357,7 +1361,7 @@ public class ChatTool implements RoomObserver, PresenceObserver {
    
    public boolean getCanCreateChannel()
    {
-      return getChatManager().getCanCreateChannel();
+      return getChatManager().getCanCreateChannel(getContext());
    }
 
    public boolean getCanRead(ChatChannel channel)
@@ -1365,9 +1369,14 @@ public class ChatTool implements RoomObserver, PresenceObserver {
       return getChatManager().getCanReadMessage(channel);
    }
    
+   public boolean getCanPost()
+   {
+      return (getCurrentChannel() == null) ? false : getChatManager().getCanPostMessage(getCurrentChannel().getChatChannel());
+   }
+   
    public boolean getMaintainer()
    {
-      return (getChatManager() == null) ? false : getChatManager().isMaintainer();
+      return (getChatManager() == null) ? false : getChatManager().isMaintainer(getContext());
    }
    
    public String getMessageOwnerDisplayName(ChatMessage message)
