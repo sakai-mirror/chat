@@ -1,6 +1,7 @@
 <f:view>
    <sakai:view title="#{msgs['custom.chatroom']}">
       <h:form id="topForm">
+      <h:inputHidden id="chatidhidden" value="#{ChatTool.currentChatChannelId}" />
       <script type="text/javascript">
 	//focus_path = [ "Control", "mainForm:message" ];
 
@@ -32,6 +33,7 @@
 						<f:selectItem itemValue="0" itemLabel="#{msgs.neitherDateOrTime}" />
 						<f:selectItem itemValue="4" itemLabel="#{msgs.uniqueid}" />
 					</h:selectOneMenu> 
+					<h:outputLabel for="messageOptions"	value="#{msgs['combox.viewfrom']}" />
 					<h:selectOneMenu id="messageOptions"
 							value="#{ChatTool.messageOptions}" 
 							onchange="this.form.submit();"
@@ -71,7 +73,7 @@
 					marginheight="0"
 					scrolling="no"
 					align="right"
-					src="roomUsers">
+					src="roomUsers?channel=<h:outputText value="#{ChatTool.currentChatChannelId}" />">
 				</iframe>
 			</div>
 			<iframe

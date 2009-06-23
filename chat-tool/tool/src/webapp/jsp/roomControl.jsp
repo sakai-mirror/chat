@@ -51,9 +51,11 @@ try { parent.updateNow(); } catch (error) {}
 	<sakai:script contextBase="/library" path="/js/jquery.js" />
 	<sakai:script contextBase="/sakai-chat-tool" path="/js/chatscript.js"/>
 
-   <h:form id="mainForm">
+   <h:form id="mainForm" rendered="#{ChatTool.canPost}">
 	  <input type="hidden" id="actionInjection" name="_idOfAction" value="some value" />
-      <label for="message"></label>
+      <h:inputHidden id="chatidhidden" value="#{ChatTool.currentChatChannelId}" />
+      <h:outputLabel for="message"	value="#{msgs['control.lab']}" />    
+      <br>      
       <h:inputTextarea id="message" value="#{ChatTool.newMessageText}" rows="3" cols="60" onkeypress="formSubmitOnEnterJSF(this, event)" />
       <sakai:button_bar>
           <sakai:button_bar_item id="submit"

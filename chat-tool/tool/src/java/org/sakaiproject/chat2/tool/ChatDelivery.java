@@ -97,9 +97,6 @@ public class ChatDelivery extends BaseDelivery
 	{
       ChatMessage message = null;
       
-      // assume the message is being delivered, so clear timeout
-      ChatTool.setTimeout(getAddress(),null);
-
       if(m_message instanceof ChatMessage) {
          message = (ChatMessage)m_message;
       } else if(m_message instanceof String) {
@@ -133,11 +130,11 @@ public class ChatDelivery extends BaseDelivery
 
 		// if we don't know we can do the DOM based refresh, or we are missing channel or msg (could have been a message delete)
 		// trigger a panel refresh
-		boolean browserSupportsDomRefresh = !browserId.equals(UsageSession.UNKNOWN);
+//		boolean browserSupportsDomRefresh = !browserId.equals(UsageSession.UNKNOWN);
 		
-		if (!browserSupportsDomRefresh || channel == null)
+		if (channel == null)
 		{
-			retval = "try { this.location.replace(addAuto(this.location));} catch (error) {}";
+			retval = "try { this.location.replace(addAuto(this.location));} catch (error) {alert(error);}";
 		}
 		
 		// otherwise setup for a browser-side javascript DOM modification to insert the message
@@ -155,7 +152,7 @@ public class ChatDelivery extends BaseDelivery
 			retvalBuf.append( "', '" );
 			retvalBuf.append( sender.getId() );
 			retvalBuf.append( "', '" );
-			retvalBuf.append( String.valueOf(chatManager.getCanDelete(message, placementId)).toString() );
+			retvalBuf.append( String.valueOf(chatManager.getCanDelete(message)).toString() );
 			retvalBuf.append( "', '" );
 			retvalBuf.append( messageTime.toStringLocalDate() );
 			retvalBuf.append( "', '" );
