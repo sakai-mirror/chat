@@ -2,11 +2,9 @@
   <name>sakai-chat-impl</name>
   <comment/>
   <projects>
-    <project>entitybroker-api</project>
     <project>sakai-chat-api</project>
     <project>sakai-message-api</project>
     <project>sakai-message-impl</project>
-    <project>sakai-search-api</project>
   </projects>
   <buildSpec>
     <buildCommand>
